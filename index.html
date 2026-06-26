@@ -1,1 +1,43 @@
+// Guardar automáticamente en el almacenamiento del dispositivo al enviar
+document.getElementById("relevo-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    
+    const reporte = {
+        jefe: document.getElementById("nombre-jefe").value,
+        fecha: document.getElementById("fecha-turno").value,
+        turno: document.getElementById("turno-seleccionado").value,
+        incidenciasGenerales: document.getElementById("incidencias-generales").value,
+        puestos: puestos.map(p => ({
+            puesto: p.nombre,
+            novedades: document.getElementById(`texto-${p.id}`).value || "Sin incidencias.",
+        })),
+        observacionesFinales: document.getElementById("observaciones-finales").value
+    };
 
+    // Generamos una clave única por día y turno (Ej: "relevo_2026-06-19_TARDE")
+    const claveGuardado = `relevo_${reporte.fecha}_${reporte.turno}`;
+    
+    // Lo guardamos en la memoria del teléfono/PC
+    localStorage.setItem(claveGuardado, JSON.stringify(reporte));
+    
+    alert(`¡Reporte del turno de la ${reporte.turno} guardado con éxito en este dispositivo!`);
+});
+
+// FUNCIÓN EXTRA: Cargar datos automáticamente si ya existen para ese día/turno
+document.getElementById("turno-seleccionado").addEventListener("change", cargarDatosExistentes);
+document.getElementById("fecha-turno").addEventListener("change", cargarDatosExistentes);
+
+function cargarDatosExistentes() {
+    const fecha = document.getElementById("fecha-turno").value;
+    const turno = document.getElementById("turno-seleccionado").value;
+    const datosGuardados = localStorage.getItem(`relevo_${fecha}_${turno}`);
+    
+    if (datosGuardados) {
+        const datos = JSON.parse(datosGuardados);
+        document.getElementById("nombre-jefe").value = datos.jefe;
+        document.getElementById("incidencias-generales").value = datos.incidenciasGenerales;
+        document.getElementById("observaciones-finales").value = datos.observacionesFinales;
+        // (Nota: Las imágenes locales por seguridad del navegador no se pueden precargar solas)
+        alert("Se han recuperado datos guardados previamente para este turno.");
+    }
+}
