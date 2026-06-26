@@ -99,13 +99,15 @@
 
     </main>
 
-<script>
+    <script>
         // CONFIGURACIÓN DE TU BASE DE DATOS CRÍTICA
-        const SUPABASE_URL = "https://jftoltwmhehlmbefoneq.supabase.co/rest/v1/";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdG9sdHdtaGVobG1iZWZvbmVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjkwNjYsImV4cCI6MjA5ODA0NTA2Nn0.uqiNNCQkFPy3kZiYH1bpD1sFYeTHr7kAfKaPejbF1FI";
+        // Recorri estos valores para que pongas tus llaves reales entre las comillas
+        const URL_DE_SUPABASE = "https://jftoltwmhehlmbefoneq.supabase.co/rest/v1/
+";
+        const CLAVE_ANON_PUBLIC = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdG9sdHdtaGVobG1iZWZvbmVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjkwNjYsImV4cCI6MjA5ODA0NTA2Nn0.uqiNNCQkFPy3kZiYH1bpD1sFYeTHr7kAfKaPejbF1FI";
 
-        // Inicializamos el cliente cambiándole el nombre a 'db' para que no choque
-        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Inicializamos el cliente con un nombre único para evitar bloqueos
+        const objetoDB = window.supabase.createClient(URL_DE_SUPABASE, CLAVE_ANON_PUBLIC);
 
         const puestos = [
             { id: "linea_1", nombre: "Línea 1" }, { id: "linea_2", nombre: "Línea 2" },
@@ -226,13 +228,13 @@
                         const fileExt = file.name.split('.').pop();
                         const fileName = `${fecha}_${turno}_${puesto.id}.${fileExt}`;
 
-                        const { data, error } = await db.storage
+                        const { data, error } = await objetoDB.storage
                             .from('fotos-relevos')
                             .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
                         if (error) throw error;
 
-                        const { data: publicUrlData } = db.storage
+                        const { data: publicUrlData } = objetoDB.storage
                             .from('fotos-relevos')
                             .getPublicUrl(fileName);
 
@@ -242,7 +244,7 @@
                     }
                 }
 
-                const { error: dbError } = await db
+                const { error: dbError } = await objetoDB
                     .from('relevos')
                     .insert([{
                         fecha: fecha,
@@ -291,7 +293,7 @@
             spinner.classList.remove("hidden");
 
             try {
-                const { data, error } = await db
+                const { data, error } = await objetoDB
                     .from('relevos')
                     .select('*')
                     .order('fecha', { ascending: false })
@@ -375,3 +377,5 @@
             });
         }
     </script>
+</body>
+</html>
