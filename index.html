@@ -1,43 +1,388 @@
-// Guardar automáticamente en el almacenamiento del dispositivo al enviar
-document.getElementById("relevo-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    
-    const reporte = {
-        jefe: document.getElementById("nombre-jefe").value,
-        fecha: document.getElementById("fecha-turno").value,
-        turno: document.getElementById("turno-seleccionado").value,
-        incidenciasGenerales: document.getElementById("incidencias-generales").value,
-        puestos: puestos.map(p => ({
-            puesto: p.nombre,
-            novedades: document.getElementById(`texto-${p.id}`).value || "Sin incidencias.",
-        })),
-        observacionesFinales: document.getElementById("observaciones-finales").value
-    };
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eulen - Relevos Mahou San Miguel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased pb-12">
 
-    // Generamos una clave única por día y turno (Ej: "relevo_2026-06-19_TARDE")
-    const claveGuardado = `relevo_${reporte.fecha}_${reporte.turno}`;
-    
-    // Lo guardamos en la memoria del teléfono/PC
-    localStorage.setItem(claveGuardado, JSON.stringify(reporte));
-    
-    alert(`¡Reporte del turno de la ${reporte.turno} guardado con éxito en este dispositivo!`);
-});
+    <header class="bg-amber-600 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold tracking-tight">EULEN</h1>
+                <p class="text-xs text-amber-100 font-medium">Control de Relevos - Mahou SM</p>
+            </div>
+            <div class="bg-amber-700 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                <span id="current-date-badge">--/--/----</span>
+            </div>
+        </div>
+        
+        <div class="max-w-4xl mx-auto px-4 mt-2 flex gap-1 border-b border-amber-500">
+            <button onclick="cambiarPestana('nuevo')" id="tab-nuevo" class="px-4 py-2 font-semibold bg-white text-amber-600 rounded-t-lg transition">
+                📝 Nuevo Parte
+            </button>
+            <button onclick="cambiarPestana('historial')" id="tab-historial" class="px-4 py-2 font-semibold text-amber-100 hover:bg-amber-700 rounded-t-lg transition">
+                🗂️ Histórico Cloud
+            </button>
+        </div>
+    </header>
 
-// FUNCIÓN EXTRA: Cargar datos automáticamente si ya existen para ese día/turno
-document.getElementById("turno-seleccionado").addEventListener("change", cargarDatosExistentes);
-document.getElementById("fecha-turno").addEventListener("change", cargarDatosExistentes);
+    <main class="max-w-4xl mx-auto px-4 mt-6">
+        
+        <div id="vista-nuevo" class="block">
+            <form id="relevo-form" class="space-y-6">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
+                        <i data-lucide="clipboard-list" class="text-amber-600"></i> Datos del Turno
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Jefe de Equipo</label>
+                            <input type="text" id="nombre-jefe" required placeholder="Nombre completo" class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                            <input type="date" id="fecha-turno" required class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Turno</label>
+                            <select id="turno-seleccionado" required class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white outline-none">
+                                <option value="MAÑANA">MAÑANA</option>
+                                <option value="TARDE">TARDE</option>
+                                <option value="NOCHE">NOCHE</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
 
-function cargarDatosExistentes() {
-    const fecha = document.getElementById("fecha-turno").value;
-    const turno = document.getElementById("turno-seleccionado").value;
-    const datosGuardados = localStorage.getItem(`relevo_${fecha}_${turno}`);
-    
-    if (datosGuardados) {
-        const datos = JSON.parse(datosGuardados);
-        document.getElementById("nombre-jefe").value = datos.jefe;
-        document.getElementById("incidencias-generales").value = datos.incidenciasGenerales;
-        document.getElementById("observaciones-finales").value = datos.observacionesFinales;
-        // (Nota: Las imágenes locales por seguridad del navegador no se pueden precargar solas)
-        alert("Se han recuperado datos guardados previamente para este turno.");
-    }
-}
+                <div class="space-y-4">
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 px-1">
+                        <i data-lucide="factory" class="text-amber-600"></i> Estado de los Puestos
+                    </h2>
+                    <div id="secciones-container" class="space-y-4"></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-3">
+                    <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
+                        <i data-lucide="message-square" class="text-amber-600"></i> Observaciones Finales
+                    </h2>
+                    <textarea id="observaciones-finales" rows="3" placeholder="Notas complementarias para el relevo..." class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"></textarea>
+                </div>
+
+                <button type="submit" id="btn-guardar" class="w-full bg-amber-600 text-white font-bold py-3 px-4 rounded-xl shadow hover:bg-amber-700 transition flex items-center justify-center gap-2">
+                    <i data-lucide="cloud-upload" class="w-5 h-5"></i> Guardar Turno y Evidencias en Supabase
+                </button>
+            </form>
+        </div>
+
+        <div id="vista-historial" class="hidden space-y-4">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <h2 class="text-lg font-bold text-gray-900">Historial de Relevos Cloud</h2>
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-gray-600 font-medium">Filtrar por fecha:</label>
+                    <input type="date" id="filtro-historial" onchange="renderizarHistorialFiltrado()" class="px-3 py-1.5 border border-gray-300 rounded-lg outline-none">
+                </div>
+            </div>
+
+            <div id="loading-spinner" class="text-center py-12 hidden">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-600 border-t-transparent"></div>
+                <p class="text-sm text-gray-500 mt-2 font-medium">Conectando con Supabase DB...</p>
+            </div>
+
+            <div id="lista-historial" class="space-y-4"></div>
+        </div>
+
+    </main>
+
+    <script>
+        // CONFIGURACIÓN DE TU BASE DE DATOS CRÍTICA
+        const SUPABASE_URL = "https://jftoltwmhehlmbefoneq.supabase.co/rest/v1/";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdG9sdHdtaGVobG1iZWZvbmVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjkwNjYsImV4cCI6MjA5ODA0NTA2Nn0.uqiNNCQkFPy3kZiYH1bpD1sFYeTHr7kAfKaPejbF1FI";
+
+        // Inicializamos el cliente de Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const puestos = [
+            { id: "linea_1", nombre: "Línea 1" }, { id: "linea_2", nombre: "Línea 2" },
+            { id: "linea_3", nombre: "Línea 3" }, { id: "linea_4", nombre: "Línea 4" },
+            { id: "linea_5", nombre: "Línea 5" }, { id: "carga_descarga", nombre: "Carga y descarga" },
+            { id: "carretillas", nombre: "Carretillas" }
+        ];
+
+        // Diccionario temporal para guardar los archivos de fotos cargados en memoria
+        let archivosFotos = {};
+        let cacheRegistros = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderSecciones();
+            establecerFechaYTurnoAutomatico();
+            lucide.createIcons();
+        });
+
+        function cambiarPestana(pestana) {
+            const vistaNuevo = document.getElementById('vista-nuevo');
+            const vistaHistorial = document.getElementById('vista-historial');
+            const tabNuevo = document.getElementById('tab-nuevo');
+            const tabHistorial = document.getElementById('tab-historial');
+
+            if (pestana === 'nuevo') {
+                vistaNuevo.classList.remove('hidden');
+                vistaHistorial.classList.add('hidden');
+                tabNuevo.className = "px-4 py-2 font-semibold bg-white text-amber-600 rounded-t-lg transition";
+                tabHistorial.className = "px-4 py-2 font-semibold text-amber-100 hover:bg-amber-700 rounded-t-lg transition";
+            } else {
+                vistaNuevo.classList.add('hidden');
+                vistaHistorial.classList.remove('hidden');
+                tabHistorial.className = "px-4 py-2 font-semibold bg-white text-amber-600 rounded-t-lg transition";
+                tabNuevo.className = "px-4 py-2 font-semibold text-amber-100 hover:bg-amber-700 rounded-t-lg transition";
+                consultarBaseDeDatos();
+            }
+        }
+
+        function renderSecciones() {
+            document.getElementById("secciones-container").innerHTML = puestos.map(puesto => `
+                <div class="bg-white p-4 rounded-xl border border-gray-200 space-y-3">
+                    <h3 class="font-bold text-gray-800">${puesto.nombre}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <textarea id="texto-${puesto.id}" rows="2" placeholder="Sin incidencias..." class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm"></textarea>
+                        
+                        <div class="flex flex-col justify-center border border-dashed border-gray-200 rounded-lg p-2 bg-gray-50">
+                            <div class="flex items-center gap-2">
+                                <label class="cursor-pointer bg-white border text-xs font-semibold text-gray-700 px-3 py-1.5 rounded shadow-sm hover:bg-gray-50">
+                                    📸 Hacer / Subir Foto
+                                    <input type="file" id="input-foto-${puesto.id}" accept="image/*" class="hidden" onchange="procesarFoto(this, '${puesto.id}')">
+                                </label>
+                                <button type="button" id="btn-borrar-${puesto.id}" onclick="borrarFoto('${puesto.id}')" class="hidden text-red-500 hover:text-red-700">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                            <div class="mt-2 hidden" id="preview-container-${puesto.id}">
+                                <img id="preview-${puesto.id}" src="" class="h-16 w-auto object-cover rounded border">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Previsualizar la foto localmente
+        function procesarFoto(input, id) {
+            const file = input.files[0];
+            if (!file) return;
+
+            archivosFotos[id] = file; // Almacenamos el archivo real
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById(`preview-${id}`).src = e.target.result;
+                document.getElementById(`preview-container-${id}`).classList.remove('hidden');
+                document.getElementById(`btn-borrar-${id}`).classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function borrarFoto(id) {
+            document.getElementById(`input-foto-${id}`).value = "";
+            delete archivosFotos[id];
+            document.getElementById(`preview-container-${id}`).classList.add('hidden');
+            document.getElementById(`btn-borrar-${id}`).classList.add('hidden');
+        }
+
+        function establecerFechaYTurnoAutomatico() {
+            const hoy = new Date();
+            const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoy.getDate()).padStart(2, '0');
+            document.getElementById("fecha-turno").value = `${hoy.getFullYear()}-${mes}-${dia}`;
+            document.getElementById("current-date-badge").innerText = `${dia}/${mes}/${hoy.getFullYear()}`;
+
+            const hora = hoy.getHours();
+            let turno = "MAÑANA"; 
+            if (hora >= 14 && hora < 22) turno = "TARDE";
+            else if (hora >= 22 || hora < 6) turno = "NOCHE";
+            document.getElementById("turno-seleccionado").value = turno;
+        }
+
+        // GUARDADO PRO EN SUPABASE
+        document.getElementById("relevo-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById("btn-guardar");
+            btn.disabled = true;
+            btn.innerText = "Subiendo reporte y fotos a la nube...";
+
+            const fecha = document.getElementById("fecha-turno").value;
+            const turno = document.getElementById("turno-seleccionado").value;
+            const jefe = document.getElementById("nombre-jefe").value;
+            const observaciones = document.getElementById("observaciones-finales").value;
+
+            let urlsFotos = {};
+
+            try {
+                // 1. Subir primero las fotos que existan al bucket de Supabase Storage
+                for (const puesto of puestos) {
+                    if (archivosFotos[puesto.id]) {
+                        const file = archivosFotos[puesto.id];
+                        const fileExt = file.name.split('.').pop();
+                        // Nombre único: fecha_turno_puesto.jpg
+                        const fileName = `${fecha}_${turno}_${puesto.id}.${fileExt}`;
+
+                        const { data, error } = await supabase.storage
+                            .from('fotos-relevos')
+                            .upload(fileName, file, { cacheControl: '3600', upsert: true });
+
+                        if (error) throw error;
+
+                        // Obtenemos la URL pública de la foto subida
+                        const { data: publicUrlData } = supabase.storage
+                            .from('fotos-relevos')
+                            .getPublicUrl(fileName);
+
+                        urlsFotos[puesto.id] = publicUrlData.publicUrl;
+                    } else {
+                        urlsFotos[puesto.id] = null;
+                    }
+                }
+
+                // 2. Insertar los datos en formato texto junto a los enlaces de las fotos
+                const { error: dbError } = await supabase
+                    .from('relevos')
+                    .insert([{
+                        fecha: fecha,
+                        turno: turno,
+                        jefe: jefe,
+                        linea_1: document.getElementById("texto-linea_1").value || "Sin incidencias",
+                        linea_1_foto: urlsFotos["linea_1"],
+                        linea_2: document.getElementById("texto-linea_2").value || "Sin incidencias",
+                        linea_2_foto: urlsFotos["linea_2"],
+                        linea_3: document.getElementById("texto-linea_3").value || "Sin incidencias",
+                        linea_3_foto: urlsFotos["linea_3"],
+                        linea_4: document.getElementById("texto-linea_4").value || "Sin incidencias",
+                        linea_4_foto: urlsFotos["linea_4"],
+                        linea_5: document.getElementById("texto-linea_5").value || "Sin incidencias",
+                        linea_5_foto: urlsFotos["linea_5"],
+                        carga_descarga: document.getElementById("texto-carga_descarga").value || "Sin incidencias",
+                        carga_descarga_foto: urlsFotos["carga_descarga"],
+                        carretillas: document.getElementById("texto-carretillas").value || "Sin incidencias",
+                        carretillas_foto: urlsFotos["carretillas"],
+                        observaciones: observaciones
+                    }]);
+
+                if (dbError) throw dbError;
+
+                alert("¡Parte y fotos almacenados con éxito en Supabase!");
+                document.getElementById("relevo-form").reset();
+                puestos.forEach(p => borrarFoto(p.id));
+                establecerFechaYTurnoAutomatico();
+                cambiarPestana('historial');
+
+            } catch (err) {
+                console.error(err);
+                alert("Error al subir los datos: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i data-lucide="cloud-upload" class="w-5 h-5"></i> Guardar Turno y Evidencias en Supabase`;
+                lucide.createIcons();
+            }
+        });
+
+        // CONSULTA DE DATOS DESDE SUPABASE
+        async function consultarBaseDeDatos() {
+            const contenedor = document.getElementById("lista-historial");
+            const spinner = document.getElementById("loading-spinner");
+            
+            contenedor.innerHTML = "";
+            spinner.classList.remove("hidden");
+
+            try {
+                const { data, error } = await supabase
+                    .from('relevos')
+                    .select('*')
+                    .order('fecha', { ascending: false })
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                cacheRegistros = data;
+                spinner.classList.add("hidden");
+                renderizarHistorialFiltrado();
+
+            } catch (err) {
+                spinner.classList.add("hidden");
+                contenedor.innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded-xl border text-center">Error al conectar con la base de datos cloud: ${err.message}</div>`;
+            }
+        }
+
+        function renderizarHistorialFiltrado() {
+            const contenedor = document.getElementById("lista-historial");
+            const filtroFecha = document.getElementById("filtro-historial").value;
+            contenedor.innerHTML = "";
+
+            let registros = [...cacheRegistros];
+
+            if (filtroFecha) {
+                registros = registros.filter(r => r.fecha === filtroFecha);
+            }
+
+            if (registros.length === 0) {
+                contenedor.innerHTML = `<div class="p-8 text-center text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">No hay partes guardados para esta fecha.</div>`;
+                return;
+            }
+
+            registros.forEach(reg => {
+                const [ano, mes, dia] = reg.fecha.split('-');
+                const fechaEspanol = `${dia}/${mes}/${ano}`;
+
+                // Lista ordenada mapeada
+                const mapeoPuestosVisual = [
+                    { nombre: "Línea 1", novedades: reg.linea_1, foto: reg.linea_1_foto },
+                    { nombre: "Línea 2", novedades: reg.linea_2, foto: reg.linea_2_foto },
+                    { nombre: "Línea 3", novedades: reg.linea_3, foto: reg.linea_3_foto },
+                    { nombre: "Línea 4", novedades: reg.linea_4, foto: reg.linea_4_foto },
+                    { nombre: "Línea 5", novedades: reg.linea_5, foto: reg.linea_5_foto },
+                    { nombre: "Carga y descarga", novedades: reg.carga_descarga, foto: reg.carga_descarga_foto },
+                    { nombre: "Carretillas", novedades: reg.carretillas, foto: reg.carretillas_foto }
+                ];
+
+                let htmlPuestos = mapeoPuestosVisual.map(p => {
+                    const esIncidencia = p.novedades !== "Sin incidencias" && p.novedades.trim() !== "";
+                    const colorPunto = esIncidencia ? "bg-red-500" : "bg-green-500";
+                    const textoIncidencia = esIncidencia ? p.novedades : '<span class="text-gray-400 italic">Sin incidencias</span>';
+                    
+                    const htmlFoto = p.foto 
+                        ? `<div class="mt-2"><img src="${p.foto}" alt="Evidencia" class="h-28 w-auto object-cover rounded border shadow-sm cursor-zoom-in" onclick="window.open('${p.foto}', '_blank')"></div>` 
+                        : '';
+                    
+                    return `
+                        <div class="flex items-start gap-2 mb-3 border-b border-gray-50 pb-3">
+                            <div class="w-2 h-2 rounded-full mt-1.5 ${colorPunto}"></div>
+                            <div class="flex-1">
+                                <span class="font-bold text-gray-700 text-sm">${p.nombre}:</span> 
+                                <span class="text-gray-600 text-sm">${textoIncidencia}</span>
+                                ${htmlFoto}
+                            </div>
+                        </div>`;
+                }).join('');
+
+                contenedor.innerHTML += `
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                        <div class="flex justify-between items-center border-b pb-3 mb-3">
+                            <div>
+                                <span class="bg-gray-100 text-gray-800 text-xs font-bold px-2 py-1 rounded border">📅 ${fechaEspanol}</span>
+                                <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded ml-1">⏰ Turno: ${reg.turno}</span>
+                            </div>
+                            <span class="text-sm font-semibold text-gray-600">👤 ${reg.jefe}</span>
+                        </div>
+                        <div class="pl-1">${htmlPuestos}</div>
+                        ${reg.observaciones ? `<div class="mt-2 p-3 bg-gray-50 text-sm rounded-lg text-gray-700 border border-gray-100"><b>Observaciones:</b> ${reg.observaciones}</div>` : ''}
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
