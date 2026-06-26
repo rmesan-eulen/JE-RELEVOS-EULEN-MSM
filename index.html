@@ -1,0 +1,79 @@
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  
+  // Buscar o crear automáticamente una carpeta en tu Google Drive para las fotos
+  var folderName = "Fotos_Relevos_Mahou";
+  var folders = DriveApp.getFoldersByName(folderName);
+  var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+  
+  var puestosMap = {};
+  data.puestos.forEach(function(p) {
+    var fotoUrl = "";
+    // Si el JSON contiene una imagen comprimida en Base64, la transformamos en archivo
+    if (p.fotoBase64 && p.fotoBase64.includes("base64,")) {
+      try {
+        var parts = p.fotoBase64.split(",");
+        var decoded = Utilities.base64Decode(parts[1]);
+        var nombreArchivo = "Relevo_" + data.fecha + "_" + data.turno + "_" + p.nombre.replace(/\s+/g, '_') + ".jpg";
+        var blob = Utilities.newBlob(decoded, "image/jpeg", nombreArchivo);
+        var file = folder.createFile(blob);
+        
+        // Hacemos que la foto sea visible para cualquiera con el enlace (para que la app la muestre)
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        fotoUrl = file.getUrl();
+      } catch(err) {
+        fotoUrl = "Error al procesar imagen";
+      }
+    }
+    puestosMap[p.nombre] = { novedades: p.novedades, foto: fotoUrl };
+  });
+  
+  // Guardamos la fila emparejando cada Texto con su Foto correspondiente
+  var fila = [
+    data.fecha, data.turno, data.jefe,
+    puestosMap["Línea 1"].novedades, puestosMap["Línea 1"].foto,
+    puestosMap["Línea 2"].novedades, puestosMap["Línea 2"].foto,
+    puestosMap["Línea 3"].novedades, puestosMap["Línea 3"].foto,
+    puestosMap["Línea 4"].novedades, puestosMap["Línea 4"].foto,
+    puestosMap["Línea 5"].novedades, puestosMap["Línea 5"].foto,
+    puestosMap["Carga y descarga"].novedades, puestosMap["Carga y descarga"].foto,
+    puestosMap["Carretillas"].novedades, puestosMap["Carretillas"].foto,
+    data.observaciones || ""
+  ];
+  
+  sheet.appendRow(fila);
+  return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+                       .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var rows = sheet.getDataRange().getValues();
+  var result = [];
+  
+  for (var i = 1; i < rows.length; i++) {
+    var row = rows[i];
+    var fechaFormateada = row[0];
+    if (fechaFormateada instanceof Date) {
+      fechaFormateada = fechaFormateada.toISOString().split('T')[0];
+    }
+    
+    result.push({
+      fecha: fechaFormateada, turno: row[1], jefe: row[2],
+      puestos: [
+        { nombre: "Línea 1", novedades: row[3], foto: row[4] },
+        { nombre: "Línea 2", novedades: row[5], foto: row[6] },
+        { nombre: "Línea 3", novedades: row[7], foto: row[8] },
+        { nombre: "Línea 4", novedades: row[9], foto: row[10] },
+        { nombre: "Línea 5", novedades: row[11], foto: row[12] },
+        { nombre: "Carga y descarga", novedades: row[13], foto: row[14] },
+        { nombre: "Carretillas", novedades: row[15], foto: row[16] }
+      ],
+      observaciones: row[17]
+    });
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(result))
+                       .setMimeType(ContentService.MimeType.JSON);
+}
