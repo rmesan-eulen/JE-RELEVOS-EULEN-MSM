@@ -99,13 +99,13 @@
 
     </main>
 
-    <script>
+<script>
         // CONFIGURACIÓN DE TU BASE DE DATOS CRÍTICA
         const SUPABASE_URL = "https://jftoltwmhehlmbefoneq.supabase.co/rest/v1/";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdG9sdHdtaGVobG1iZWZvbmVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjkwNjYsImV4cCI6MjA5ODA0NTA2Nn0.uqiNNCQkFPy3kZiYH1bpD1sFYeTHr7kAfKaPejbF1FI";
 
-        // Inicializamos el cliente de Supabase
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // Inicializamos el cliente cambiándole el nombre a 'db' para que no choque
+        const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const puestos = [
             { id: "linea_1", nombre: "Línea 1" }, { id: "linea_2", nombre: "Línea 2" },
@@ -114,7 +114,6 @@
             { id: "carretillas", nombre: "Carretillas" }
         ];
 
-        // Diccionario temporal para guardar los archivos de fotos cargados en memoria
         let archivosFotos = {};
         let cacheRegistros = [];
 
@@ -170,12 +169,11 @@
             `).join('');
         }
 
-        // Previsualizar la foto localmente
         function procesarFoto(input, id) {
             const file = input.files[0];
             if (!file) return;
 
-            archivosFotos[id] = file; // Almacenamos el archivo real
+            archivosFotos[id] = file;
 
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -207,7 +205,6 @@
             document.getElementById("turno-seleccionado").value = turno;
         }
 
-        // GUARDADO PRO EN SUPABASE
         document.getElementById("relevo-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             
@@ -223,22 +220,19 @@
             let urlsFotos = {};
 
             try {
-                // 1. Subir primero las fotos que existan al bucket de Supabase Storage
                 for (const puesto of puestos) {
                     if (archivosFotos[puesto.id]) {
                         const file = archivosFotos[puesto.id];
                         const fileExt = file.name.split('.').pop();
-                        // Nombre único: fecha_turno_puesto.jpg
                         const fileName = `${fecha}_${turno}_${puesto.id}.${fileExt}`;
 
-                        const { data, error } = await supabase.storage
+                        const { data, error } = await db.storage
                             .from('fotos-relevos')
                             .upload(fileName, file, { cacheControl: '3600', upsert: true });
 
                         if (error) throw error;
 
-                        // Obtenemos la URL pública de la foto subida
-                        const { data: publicUrlData } = supabase.storage
+                        const { data: publicUrlData } = db.storage
                             .from('fotos-relevos')
                             .getPublicUrl(fileName);
 
@@ -248,8 +242,7 @@
                     }
                 }
 
-                // 2. Insertar los datos en formato texto junto a los enlaces de las fotos
-                const { error: dbError } = await supabase
+                const { error: dbError } = await db
                     .from('relevos')
                     .insert([{
                         fecha: fecha,
@@ -290,7 +283,6 @@
             }
         });
 
-        // CONSULTA DE DATOS DESDE SUPABASE
         async function consultarBaseDeDatos() {
             const contenedor = document.getElementById("lista-historial");
             const spinner = document.getElementById("loading-spinner");
@@ -299,7 +291,7 @@
             spinner.classList.remove("hidden");
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await db
                     .from('relevos')
                     .select('*')
                     .order('fecha', { ascending: false })
@@ -337,7 +329,6 @@
                 const [ano, mes, dia] = reg.fecha.split('-');
                 const fechaEspanol = `${dia}/${mes}/${ano}`;
 
-                // Lista ordenada mapeada
                 const mapeoPuestosVisual = [
                     { nombre: "Línea 1", novedades: reg.linea_1, foto: reg.linea_1_foto },
                     { nombre: "Línea 2", novedades: reg.linea_2, foto: reg.linea_2_foto },
@@ -384,5 +375,3 @@
             });
         }
     </script>
-</body>
-</html>
