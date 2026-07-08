@@ -6,10 +6,15 @@
     <title>Eulen - Relevos Mahou San Miguel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Librería oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Icono oficial para la pantalla de inicio de Android e iPhone -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased pb-12">
 
+    <!-- CABECERA -->
     <header class="bg-amber-600 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
             <div>
@@ -22,9 +27,10 @@
             </div>
         </div>
         
+        <!-- PESTAÑAS -->
         <div class="max-w-4xl mx-auto px-4 mt-2 flex gap-1 border-b border-amber-500">
             <button onclick="cambiarPestana('nuevo')" id="tab-nuevo" class="px-4 py-2 font-semibold bg-white text-amber-600 rounded-t-lg transition">
-                📝 Nuevo Parte
+                📝 Nuevo Parte / Actualizar
             </button>
             <button onclick="cambiarPestana('historial')" id="tab-historial" class="px-4 py-2 font-semibold text-amber-100 hover:bg-amber-700 rounded-t-lg transition">
                 🗂️ Histórico Cloud
@@ -34,8 +40,10 @@
 
     <main class="max-w-4xl mx-auto px-4 mt-6">
         
+        <!-- VISTA 1: FORMULARIO -->
         <div id="vista-nuevo" class="block">
             <form id="relevo-form" class="space-y-6">
+                <!-- DATOS GENERALES -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
                         <i data-lucide="clipboard-list" class="text-amber-600"></i> Datos del Turno
@@ -60,13 +68,15 @@
                     </div>
                 </div>
 
+                <!-- PUESTOS -->
                 <div class="space-y-4">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 px-1">
-                        <i data-lucide="factory" class="text-amber-600"></i> Estado de los Puestos
+                        <i data-lucide="factory" class="text-amber-600"></i> Estado de los Puestos <span class="text-xs font-normal text-gray-500">(Rellena solo lo que tenga novedades)</span>
                     </h2>
                     <div id="secciones-container" class="space-y-4"></div>
                 </div>
 
+                <!-- OBSERVACIONES -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-3">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
                         <i data-lucide="message-square" class="text-amber-600"></i> Observaciones Finales
@@ -80,6 +90,7 @@
             </form>
         </div>
 
+        <!-- VISTA 2: HISTÓRICO -->
         <div id="vista-historial" class="hidden space-y-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <h2 class="text-lg font-bold text-gray-900">Historial de Relevos Cloud</h2>
@@ -89,6 +100,7 @@
                 </div>
             </div>
 
+            <!-- Div de carga -->
             <div id="loading-spinner" class="text-center py-12 hidden">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-600 border-t-transparent"></div>
                 <p class="text-sm text-gray-500 mt-2 font-medium">Conectando con Supabase DB...</p>
@@ -101,11 +113,9 @@
 
     <script>
         // CONFIGURACIÓN DE TU BASE DE DATOS CRÍTICA
-        // Recorri estos valores para que pongas tus llaves reales entre las comillas
         const URL_DE_SUPABASE = "https://jftoltwmhehlmbefoneq.supabase.co";
-        const CLAVE_ANON_PUBLIC = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmdG9sdHdtaGVobG1iZWZvbmVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NjkwNjYsImV4cCI6MjA5ODA0NTA2Nn0.uqiNNCQkFPy3kZiYH1bpD1sFYeTHr7kAfKaPejbF1FI";
+        const CLAVE_ANON_PUBLIC = "TU_CLAVE_ANON_PUBLIC_AQUÍ";
 
-        // Inicializamos el cliente con un nombre único para evitar bloqueos
         const objetoDB = window.supabase.createClient(URL_DE_SUPABASE, CLAVE_ANON_PUBLIC);
 
         const puestos = [
@@ -155,7 +165,7 @@
                             <div class="flex items-center gap-2">
                                 <label class="cursor-pointer bg-white border text-xs font-semibold text-gray-700 px-3 py-1.5 rounded shadow-sm hover:bg-gray-50">
                                     📸 Hacer / Subir Foto
-                                    <input type="file" id="input-foto-${puesto.id}" accept="image/*" class="hidden" onchange="procesarFoto(this, '${puesto.id}')">
+                                    <input type="file" id="input-foto-${puesto.id}" accept="image/*" class="hidden" onchange="procesarFotoConCompresion(this, '${puesto.id}')">
                                 </label>
                                 <button type="button" id="btn-borrar-${puesto.id}" onclick="borrarFoto('${puesto.id}')" class="hidden text-red-500 hover:text-red-700">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -170,18 +180,49 @@
             `).join('');
         }
 
-        function procesarFoto(input, id) {
+        // NUEVO PROCESADOR MULTI-MÓVIL CON COMPRESIÓN AUTOMÁTICA (Resuelve tamaño y HEIC de iPhone)
+        function procesarFotoConCompresion(input, id) {
             const file = input.files[0];
             if (!file) return;
 
-            archivosFotos[id] = file;
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById(`preview-${id}`).src = e.target.result;
-                document.getElementById(`preview-container-${id}`).classList.remove('hidden');
-                document.getElementById(`btn-borrar-${id}`).classList.remove('hidden');
-            }
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_DIM = 1200; // Resolución óptima para nitidez sin pesar megas
+
+                    if (width > height) {
+                        if (width > MAX_DIM) {
+                            height *= MAX_DIM / width;
+                            width = MAX_DIM;
+                        }
+                    } else {
+                        if (height > MAX_DIM) {
+                            width *= MAX_DIM / height;
+                            height = MAX_DIM;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // Forzamos conversión a JPEG con calidad equilibrada (0.7)
+                    canvas.toBlob((blob) => {
+                        const compressedFile = new File([blob], `${id}.jpg`, { type: "image/jpeg" });
+                        archivosFotos[id] = compressedFile;
+
+                        document.getElementById(`preview-${id}`).src = canvas.toDataURL('image/jpeg', 0.7);
+                        document.getElementById(`preview-container-${id}`).classList.remove('hidden');
+                        document.getElementById(`btn-borrar-${id}`).classList.remove('hidden');
+                    }, 'image/jpeg', 0.7);
+                };
+                img.src = e.target.result;
+            };
             reader.readAsDataURL(file);
         }
 
@@ -206,26 +247,37 @@
             document.getElementById("turno-seleccionado").value = turno;
         }
 
+        // MOTOR REESTRUCTURADO: UNIFICACIÓN INTELIGENTE DIARIA
         document.getElementById("relevo-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             
             const btn = document.getElementById("btn-guardar");
             btn.disabled = true;
-            btn.innerText = "Subiendo reporte y fotos a la nube...";
+            btn.innerText = "Sincronizando y unificando en la nube...";
 
             const fecha = document.getElementById("fecha-turno").value;
             const turno = document.getElementById("turno-seleccionado").value;
             const jefe = document.getElementById("nombre-jefe").value;
             const observaciones = document.getElementById("observaciones-finales").value;
 
-            let urlsFotos = {};
-
             try {
+                // 1. Buscamos si ya existe una entrada creada para esta fecha y turno específicos
+                const { data: existente, error: checkError } = await objetoDB
+                    .from('relevos')
+                    .select('*')
+                    .eq('fecha', fecha)
+                    .eq('turno', turno)
+                    .maybeSingle();
+
+                if (checkError) throw checkError;
+
+                let urlsFotos = {};
+
+                // 2. Subida optimizada de fotos
                 for (const puesto of puestos) {
                     if (archivosFotos[puesto.id]) {
                         const file = archivosFotos[puesto.id];
-                        const fileExt = file.name.split('.').pop();
-                        const fileName = `${fecha}_${turno}_${puesto.id}.${fileExt}`;
+                        const fileName = `${fecha}_${turno}_${puesto.id}.jpg`;
 
                         const { data, error } = await objetoDB.storage
                             .from('fotos-relevos')
@@ -238,37 +290,59 @@
                             .getPublicUrl(fileName);
 
                         urlsFotos[puesto.id] = publicUrlData.publicUrl;
-                    } else {
-                        urlsFotos[puesto.id] = null;
                     }
                 }
 
-                const { error: dbError } = await objetoDB
-                    .from('relevos')
-                    .insert([{
-                        fecha: fecha,
-                        turno: turno,
-                        jefe: jefe,
-                        linea_1: document.getElementById("texto-linea_1").value || "Sin incidencias",
-                        linea_1_foto: urlsFotos["linea_1"],
-                        linea_2: document.getElementById("texto-linea_2").value || "Sin incidencias",
-                        linea_2_foto: urlsFotos["linea_2"],
-                        linea_3: document.getElementById("texto-linea_3").value || "Sin incidencias",
-                        linea_3_foto: urlsFotos["linea_3"],
-                        linea_4: document.getElementById("texto-linea_4").value || "Sin incidencias",
-                        linea_4_foto: urlsFotos["linea_4"],
-                        linea_5: document.getElementById("texto-linea_5").value || "Sin incidencias",
-                        linea_5_foto: urlsFotos["linea_5"],
-                        carga_descarga: document.getElementById("texto-carga_descarga").value || "Sin incidencias",
-                        carga_descarga_foto: urlsFotos["carga_descarga"],
-                        carretillas: document.getElementById("texto-carretillas").value || "Sin incidencias",
-                        carretillas_foto: urlsFotos["carretillas"],
-                        observaciones: observaciones
-                    }]);
+                // 3. Fusión de datos estructurada
+                const datosAEnviar = {
+                    fecha: fecha,
+                    turno: turno,
+                    jefe: existente ? `${existente.jefe} / ${jefe}` : jefe, // Concatenamos los nombres de los que han aportado
+                    observaciones: observaciones ? (existente && existente.observaciones ? `${existente.observaciones} | ${observaciones}` : observaciones) : (existente ? existente.observaciones : "")
+                };
 
-                if (dbError) throw dbError;
+                puestos.forEach(puesto => {
+                    const textInput = document.getElementById(`texto-${puesto.id}`).value.trim();
 
-                alert("¡Parte y fotos almacenados con éxito en Supabase!");
+                    if (existente) {
+                        // Si ya existía un parte, solo machacamos si el usuario escribe novedades reales
+                        if (textInput !== "" && textInput !== "Sin incidencias") {
+                            datosAEnviar[puesto.id] = textInput;
+                        } else {
+                            datosAEnviar[puesto.id] = existente[puesto.id];
+                        }
+
+                        // Con las fotos lo mismo, si no sube una nueva, se conserva la del compañero anterior
+                        if (urlsFotos[puesto.id]) {
+                            datosAEnviar[`${puesto.id}_foto`] = urlsFotos[puesto.id];
+                        } else {
+                            datosAEnviar[`${puesto.id}_foto`] = existente[`${puesto.id}_foto`];
+                        }
+                    } else {
+                        // Si es el primer reporte del turno, guardado estándar
+                        datosAEnviar[puesto.id] = textInput || "Sin incidencias";
+                        datosAEnviar[`${puesto.id}_foto`] = urlsFotos[puesto.id] || null;
+                    }
+                });
+
+                // 4. Inserción o Actualización condicionada
+                if (existente) {
+                    const { error: dbError } = await objetoDB
+                        .from('relevos')
+                        .update(datosAEnviar)
+                        .eq('id', existente.id);
+
+                    if (dbError) throw dbError;
+                    alert("¡Incidencias unificadas con éxito en el archivo único de hoy!");
+                } else {
+                    const { error: dbError } = await objetoDB
+                        .from('relevos')
+                        .insert([datosAEnviar]);
+
+                    if (dbError) throw dbError;
+                    alert("¡Parte diario de turno guardado con éxito!");
+                }
+
                 document.getElementById("relevo-form").reset();
                 puestos.forEach(p => borrarFoto(p.id));
                 establecerFechaYTurnoAutomatico();
@@ -276,7 +350,7 @@
 
             } catch (err) {
                 console.error(err);
-                alert("Error al subir los datos: " + err.message);
+                alert("Error en el volcado unificado: " + err.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = `<i data-lucide="cloud-upload" class="w-5 h-5"></i> Guardar Turno y Evidencias en Supabase`;
@@ -341,7 +415,7 @@
                 ];
 
                 let htmlPuestos = mapeoPuestosVisual.map(p => {
-                    const esIncidencia = p.novedades !== "Sin incidencias" && p.novedades.trim() !== "";
+                    const esIncidencia = p.novedades !== "Sin incidencias" && p.novedades && p.novedades.trim() !== "";
                     const colorPunto = esIncidencia ? "bg-red-500" : "bg-green-500";
                     const textoIncidencia = esIncidencia ? p.novedades : '<span class="text-gray-400 italic">Sin incidencias</span>';
                     
