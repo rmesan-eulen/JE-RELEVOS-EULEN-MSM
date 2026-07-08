@@ -8,36 +8,36 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Librería oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Icono oficial para la pantalla de inicio de Android e iPhone -->
+    <!-- Iconos y Manifest para App Móvil -->
     <link rel="icon" type="image/png" sizes="192x192" href="icon.png?v=2">
     <link rel="apple-touch-icon" sizes="180x180" href="icon.png?v=2">
     <link rel="manifest" href="manifest.json">
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased pb-12">
 
-    <!-- CABECERA -->
-    <header class="bg-amber-600 text-white shadow-md sticky top-0 z-50">
+    <!-- CABECERA AZUL OSCURO CORPORATIVO -->
+    <header class="bg-blue-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
-             <!-- Imagen del logo corporativo -->
-             <img src="logo.png" alt="Logo corporativo" class="h-10 w-auto bg-white rounded-md p-1 shadow-sm">
-             <div>
-                 <h1 class="text-xl font-bold tracking-tight">EULEN</h1>
-                 <p class="text-xs text-amber-100 font-medium">Control de Relevos - Mahou SM</p>
-             </div>
-         </div>
-            <div class="bg-amber-700 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2">
+                <!-- Imagen del logo corporativo -->
+                <img src="icon.png" alt="Logo corporativo" class="h-10 w-auto bg-white rounded-md p-1 shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">EULEN</h1>
+                    <p class="text-xs text-blue-100 font-medium">Control de Relevos - Mahou SM</p>
+                </div>
+            </div>
+            <div class="bg-blue-800 px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-2">
                 <i data-lucide="calendar" class="w-4 h-4"></i>
                 <span id="current-date-badge">--/--/----</span>
             </div>
         </div>
         
         <!-- PESTAÑAS -->
-        <div class="max-w-4xl mx-auto px-4 mt-2 flex gap-1 border-b border-amber-500">
-            <button onclick="cambiarPestana('nuevo')" id="tab-nuevo" class="px-4 py-2 font-semibold bg-white text-amber-600 rounded-t-lg transition">
+        <div class="max-w-4xl mx-auto px-4 mt-2 flex gap-1 border-b border-blue-700">
+            <button onclick="cambiarPestana('nuevo')" id="tab-nuevo" class="px-4 py-2 font-semibold bg-white text-blue-900 rounded-t-lg transition">
                 📝 Nuevo Parte / Actualizar
             </button>
-            <button onclick="cambiarPestana('historial')" id="tab-historial" class="px-4 py-2 font-semibold text-amber-100 hover:bg-amber-700 rounded-t-lg transition">
+            <button onclick="cambiarPestana('historial')" id="tab-historial" class="px-4 py-2 font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition">
                 🗂️ Histórico Cloud
             </button>
         </div>
@@ -51,7 +51,7 @@
                 <!-- DATOS GENERALES -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
-                        <i data-lucide="clipboard-list" class="text-amber-600"></i> Datos del Turno
+                        <i data-lucide="clipboard-list" class="text-blue-700"></i> Datos del Turno
                     </h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
@@ -76,7 +76,7 @@
                 <!-- PUESTOS -->
                 <div class="space-y-4">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 px-1">
-                        <i data-lucide="factory" class="text-amber-600"></i> Estado de los Puestos <span class="text-xs font-normal text-gray-500">(Rellena solo lo que tenga novedades)</span>
+                        <i data-lucide="factory" class="text-blue-700"></i> Estado de los Puestos <span class="text-xs font-normal text-gray-500">(Rellena solo lo que tenga novedades)</span>
                     </h2>
                     <div id="secciones-container" class="space-y-4"></div>
                 </div>
@@ -84,12 +84,13 @@
                 <!-- OBSERVACIONES -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-3">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
-                        <i data-lucide="message-square" class="text-amber-600"></i> Observaciones Finales
+                        <i data-lucide="message-square" class="text-blue-700"></i> Observaciones Finales
                     </h2>
                     <textarea id="observaciones-finales" rows="3" placeholder="Notas complementarias para el relevo..." class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"></textarea>
                 </div>
 
-                <button type="submit" id="btn-guardar" class="w-full bg-amber-600 text-white font-bold py-3 px-4 rounded-xl shadow hover:bg-amber-700 transition flex items-center justify-center gap-2">
+                <!-- BOTÓN AZUL DE GUARDADO -->
+                <button type="submit" id="btn-guardar" class="w-full bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow hover:bg-blue-800 transition flex items-center justify-center gap-2">
                     <i data-lucide="cloud-upload" class="w-5 h-5"></i> Guardar Turno y Evidencias en Supabase
                 </button>
             </form>
@@ -107,7 +108,7 @@
 
             <!-- Div de carga -->
             <div id="loading-spinner" class="text-center py-12 hidden">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-amber-600 border-t-transparent"></div>
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-900 border-t-transparent"></div>
                 <p class="text-sm text-gray-500 mt-2 font-medium">Conectando con Supabase DB...</p>
             </div>
 
@@ -148,13 +149,13 @@
             if (pestana === 'nuevo') {
                 vistaNuevo.classList.remove('hidden');
                 vistaHistorial.classList.add('hidden');
-                tabNuevo.className = "px-4 py-2 font-semibold bg-white text-amber-600 rounded-t-lg transition";
-                tabHistorial.className = "px-4 py-2 font-semibold text-amber-100 hover:bg-amber-700 rounded-t-lg transition";
+                tabNuevo.className = "px-4 py-2 font-semibold bg-white text-blue-900 rounded-t-lg transition";
+                tabHistorial.className = "px-4 py-2 font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition";
             } else {
                 vistaNuevo.classList.add('hidden');
                 vistaHistorial.classList.remove('hidden');
-                tabHistorial.className = "px-4 py-2 font-semibold bg-white text-amber-600 rounded-t-lg transition";
-                tabNuevo.className = "px-4 py-2 font-semibold text-amber-100 hover:bg-amber-700 rounded-t-lg transition";
+                tabHistorial.className = "px-4 py-2 font-semibold bg-white text-blue-900 rounded-t-lg transition";
+                tabNuevo.className = "px-4 py-2 font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition";
                 consultarBaseDeDatos();
             }
         }
@@ -185,7 +186,6 @@
             `).join('');
         }
 
-        // NUEVO PROCESADOR MULTI-MÓVIL CON COMPRESIÓN AUTOMÁTICA (Resuelve tamaño y HEIC de iPhone)
         function procesarFotoConCompresion(input, id) {
             const file = input.files[0];
             if (!file) return;
@@ -197,7 +197,7 @@
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    const MAX_DIM = 1200; // Resolución óptima para nitidez sin pesar megas
+                    const MAX_DIM = 1200;
 
                     if (width > height) {
                         if (width > MAX_DIM) {
@@ -216,7 +216,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // Forzamos conversión a JPEG con calidad equilibrada (0.7)
                     canvas.toBlob((blob) => {
                         const compressedFile = new File([blob], `${id}.jpg`, { type: "image/jpeg" });
                         archivosFotos[id] = compressedFile;
@@ -252,7 +251,6 @@
             document.getElementById("turno-seleccionado").value = turno;
         }
 
-        // MOTOR REESTRUCTURADO: UNIFICACIÓN INTELIGENTE DIARIA
         document.getElementById("relevo-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             
@@ -266,7 +264,6 @@
             const observaciones = document.getElementById("observaciones-finales").value;
 
             try {
-                // 1. Buscamos si ya existe una entrada creada para esta fecha y turno específicos
                 const { data: existente, error: checkError } = await objetoDB
                     .from('relevos')
                     .select('*')
@@ -278,12 +275,11 @@
 
                 let urlsFotos = {};
 
-                // 2. Subida optimizada de fotos
+                // 2. Subida optimizada de fotos (Corregido sin Eñes)
                 for (const puesto of puestos) {
                     if (archivosFotos[puesto.id]) {
                         const file = archivosFotos[puesto.id];
                         
-                        // Quitamos la Ñ de MAÑANA para que el servidor la acepte
                         const turnoLimpio = turno.replace(/Ñ/g, "N").replace(/ñ/g, "n");
                         const fileName = `${fecha}_${turnoLimpio}_${puesto.id}.jpg`;
 
@@ -301,11 +297,10 @@
                     }
                 }
 
-                // 3. Fusión de datos estructurada
                 const datosAEnviar = {
                     fecha: fecha,
                     turno: turno,
-                    jefe: existente ? `${existente.jefe} / ${jefe}` : jefe, // Concatenamos los nombres de los que han aportado
+                    jefe: existente ? `${existente.jefe} / ${jefe}` : jefe,
                     observaciones: observaciones ? (existente && existente.observaciones ? `${existente.observaciones} | ${observaciones}` : observaciones) : (existente ? existente.observaciones : "")
                 };
 
@@ -313,28 +308,24 @@
                     const textInput = document.getElementById(`texto-${puesto.id}`).value.trim();
 
                     if (existente) {
-                        // Si ya existía un parte, solo machacamos si el usuario escribe novedades reales
                         if (textInput !== "" && textInput !== "Sin incidencias") {
                             datosAEnviar[puesto.id] = textInput;
                         } else {
                             datosAEnviar[puesto.id] = existente[puesto.id];
                         }
 
-                        // Con las fotos lo mismo, si no sube una nueva, se conserva la del compañero anterior
                         if (urlsFotos[puesto.id]) {
                             datosAEnviar[`${puesto.id}_foto`] = urlsFotos[puesto.id];
                         } else {
                             datosAEnviar[`${puesto.id}_foto`] = existente[`${puesto.id}_foto`];
                         }
                     } else {
-                        // Si es el primer reporte del turno, guardado estándar
                         datosAEnviar[puesto.id] = textInput || "Sin incidencias";
                         datosAEnviar[`${puesto.id}_foto`] = urlsFotos[puesto.id] || null;
                     }
                 });
 
-                // 4. Inserción o Actualización condicionada
-                if (existente) {
+                if (existing = existente) {
                     const { error: dbError } = await objetoDB
                         .from('relevos')
                         .update(datosAEnviar)
@@ -447,7 +438,7 @@
                         <div class="flex justify-between items-center border-b pb-3 mb-3">
                             <div>
                                 <span class="bg-gray-100 text-gray-800 text-xs font-bold px-2 py-1 rounded border">📅 ${fechaEspanol}</span>
-                                <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded ml-1">⏰ Turno: ${reg.turno}</span>
+                                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded ml-1">⏰ Turno: ${reg.turno}</span>
                             </div>
                             <span class="text-sm font-semibold text-gray-600">👤 ${reg.jefe}</span>
                         </div>
