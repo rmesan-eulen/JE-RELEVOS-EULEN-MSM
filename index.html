@@ -282,7 +282,10 @@
                 for (const puesto of puestos) {
                     if (archivosFotos[puesto.id]) {
                         const file = archivosFotos[puesto.id];
-                        const fileName = `${fecha}_${turno}_${puesto.id}.jpg`;
+                        
+                        // Quitamos la Ñ de MAÑANA para que el servidor la acepte
+                        const turnoLimpio = turno.replace(/Ñ/g, "N").replace(/ñ/g, "n");
+                        const fileName = `${fecha}_${turnoLimpio}_${puesto.id}.jpg`;
 
                         const { data, error } = await objetoDB.storage
                             .from('fotos-relevos')
