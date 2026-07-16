@@ -13,6 +13,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased pb-12">
 
+    <!-- CABECERA -->
     <header class="bg-blue-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -28,18 +29,23 @@
             </div>
         </div>
         
-        <div class="max-w-4xl mx-auto px-4 mt-2 flex gap-1 border-b border-blue-700">
-            <button onclick="cambiarPestana('nuevo')" id="tab-nuevo" class="px-4 py-2 font-semibold bg-white text-blue-900 rounded-t-lg transition">
-                📝 Nuevo Parte / Añadir Incidencia
+        <!-- MENÚ DE TRES PESTAÑAS (Adaptado a móviles) -->
+        <div class="max-w-4xl mx-auto px-4 mt-2 flex gap-1 border-b border-blue-700 overflow-x-auto whitespace-nowrap">
+            <button onclick="cambiarPestana('nuevo')" id="tab-nuevo" class="px-3 py-2 text-sm font-semibold bg-white text-blue-900 rounded-t-lg transition">
+                📝 Nuevo Parte
             </button>
-            <button onclick="cambiarPestana('historial')" id="tab-historial" class="px-4 py-2 font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition">
+            <button onclick="cambiarPestana('historial')" id="tab-historial" class="px-3 py-2 text-sm font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition">
                 🗂️ Histórico Cloud
+            </button>
+            <button onclick="cambiarPestana('foro')" id="tab-foro" class="px-3 py-2 text-sm font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition">
+                💬 Foro / Chat
             </button>
         </div>
     </header>
 
     <main class="max-w-4xl mx-auto px-4 mt-6">
         
+        <!-- VISTA 1: FORMULARIO DE RELEVO -->
         <div id="vista-nuevo" class="block">
             <form id="relevo-form" class="space-y-6">
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-4">
@@ -86,6 +92,7 @@
             </form>
         </div>
 
+        <!-- VISTA 2: HISTÓRICO DE RELEVOS -->
         <div id="vista-historial" class="hidden space-y-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <h2 class="text-lg font-bold text-gray-900">Historial de Relevos Cloud</h2>
@@ -101,6 +108,40 @@
             </div>
 
             <div id="lista-historial" class="space-y-4"></div>
+        </div>
+
+        <!-- VISTA 3: FORO / CHAT (NUEVA) -->
+        <div id="vista-foro" class="hidden space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                <div>
+                    <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                        <i data-lucide="message-square-text" class="text-blue-700"></i> Foro de Comunicación
+                    </h2>
+                    <p class="text-xs text-gray-500">Avisos rápidos, aclaraciones y mensajes entre turnos.</p>
+                </div>
+                <button onclick="consultarForo()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition" title="Refrescar">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[480px]">
+                <!-- Contenedor mensajes chat -->
+                <div id="chat-mensajes-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 rounded-t-xl"></div>
+
+                <!-- Formulario de envío -->
+                <form id="chat-form" class="p-3 border-t border-gray-100 bg-white rounded-b-xl flex gap-2 items-end">
+                    <div class="flex-1 space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="chat-usuario" required placeholder="Tu Nombre" class="w-1/3 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none focus:border-blue-500">
+                            <span class="text-[10px] text-gray-400 self-center">Escribe a continuación:</span>
+                        </div>
+                        <input type="text" id="chat-mensaje-texto" required placeholder="Escribe un mensaje aquí..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-blue-500">
+                    </div>
+                    <button type="submit" class="bg-blue-900 text-white p-2.5 rounded-lg hover:bg-blue-800 transition shrink-0">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
         </div>
 
     </main>
@@ -126,25 +167,44 @@
             renderSecciones();
             establecerFechaYTurnoAutomatico();
             lucide.createIcons();
+
+            // Escuchar el envío del formulario de chat
+            document.getElementById("chat-form").addEventListener("submit", enviarMensajeForo);
         });
 
         function cambiarPestana(pestana) {
             const vistaNuevo = document.getElementById('vista-nuevo');
             const vistaHistorial = document.getElementById('vista-historial');
+            const vistaForo = document.getElementById('vista-foro');
             const tabNuevo = document.getElementById('tab-nuevo');
             const tabHistorial = document.getElementById('tab-historial');
+            const tabForo = document.getElementById('tab-foro');
+
+            vistaNuevo.classList.add('hidden');
+            vistaHistorial.classList.add('hidden');
+            vistaForo.classList.add('hidden');
+
+            tabNuevo.className = "px-3 py-2 text-sm font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition";
+            tabHistorial.className = "px-3 py-2 text-sm font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition";
+            tabForo.className = "px-3 py-2 text-sm font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition";
 
             if (pestana === 'nuevo') {
                 vistaNuevo.classList.remove('hidden');
-                vistaHistorial.classList.add('hidden');
-                tabNuevo.className = "px-4 py-2 font-semibold bg-white text-blue-900 rounded-t-lg transition";
-                tabHistorial.className = "px-4 py-2 font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition";
-            } else {
-                vistaNuevo.classList.add('hidden');
+                tabNuevo.className = "px-3 py-2 text-sm font-semibold bg-white text-blue-900 rounded-t-lg transition";
+            } else if (pestana === 'historial') {
                 vistaHistorial.classList.remove('hidden');
-                tabHistorial.className = "px-4 py-2 font-semibold bg-white text-blue-900 rounded-t-lg transition";
-                tabNuevo.className = "px-4 py-2 font-semibold text-blue-100 hover:bg-blue-800 rounded-t-lg transition";
+                tabHistorial.className = "px-3 py-2 text-sm font-semibold bg-white text-blue-900 rounded-t-lg transition";
                 consultarBaseDeDatos();
+            } else if (pestana === 'foro') {
+                vistaForo.classList.remove('hidden');
+                tabForo.className = "px-3 py-2 text-sm font-semibold bg-white text-blue-900 rounded-t-lg transition";
+                
+                // Relleno automático del usuario si ya lo escribió en el parte
+                const nombreJefe = document.getElementById("nombre-jefe").value.trim();
+                if (nombreJefe !== "") {
+                    document.getElementById("chat-usuario").value = nombreJefe;
+                }
+                consultarForo();
             }
         }
 
@@ -264,7 +324,6 @@
 
                 let urlsFotos = {};
 
-                // Subida optimizada de fotos MULTIPLES (Genera nombre único con el timestamp actual)
                 const marcaDeTiempo = Date.now();
                 for (const puesto of puestos) {
                     if (archivosFotos[puesto.id]) {
@@ -286,7 +345,6 @@
                     }
                 }
 
-                // Lógica de nombres de Jefe (Para que no se repitan si el mismo jefe reporta dos veces)
                 let jefeFinal = jefe;
                 if (existente && existente.jefe) {
                     if (!existente.jefe.includes(jefe)) {
@@ -296,7 +354,6 @@
                     }
                 }
 
-                // Lógica de observaciones acumulativas
                 let obsFinal = existente ? existente.observaciones : "";
                 if (observaciones !== "") {
                     const obsConHora = `[${horaGrabacion}h] ${observaciones}`;
@@ -318,7 +375,6 @@
                     const textInput = document.getElementById(`texto-${puesto.id}`).value.trim();
 
                     if (existente) {
-                        // Concatenar textos (Modo Bitácora)
                         if (textInput !== "" && textInput !== "Sin incidencias") {
                             const textoAñadido = `[${horaGrabacion}h] ${textInput}`;
                             if (existente[puesto.id] && existente[puesto.id] !== "Sin incidencias") {
@@ -330,7 +386,6 @@
                             datosAEnviar[puesto.id] = existente[puesto.id];
                         }
 
-                        // Concatenar fotos (Guardamos URLs separadas por coma)
                         if (urlsFotos[puesto.id]) {
                             if (existente[`${puesto.id}_foto`] && existente[`${puesto.id}_foto`] !== "") {
                                 datosAEnviar[`${puesto.id}_foto`] = existente[`${puesto.id}_foto`] + "," + urlsFotos[puesto.id];
@@ -342,7 +397,6 @@
                         }
 
                     } else {
-                        // Guardado inicial del turno
                         datosAEnviar[puesto.id] = textInput !== "" ? `[${horaGrabacion}h] ${textInput}` : "Sin incidencias";
                         datosAEnviar[`${puesto.id}_foto`] = urlsFotos[puesto.id] || null;
                     }
@@ -438,7 +492,6 @@
                     const colorPunto = esIncidencia ? "bg-red-500" : "bg-green-500";
                     const textoIncidencia = esIncidencia ? p.novedades : '<span class="text-gray-400 italic">Sin incidencias</span>';
                     
-                    // Lógica para mostrar VARIAS FOTOS lado a lado
                     let htmlFoto = '';
                     if (p.foto && p.foto !== "") {
                         const arrayFotos = p.foto.split(',');
@@ -476,6 +529,83 @@
                     </div>
                 `;
             });
+        }
+
+        // --- SISTEMA DEL FORO / CHAT ---
+        async function consultarForo() {
+            const container = document.getElementById("chat-mensajes-container");
+            container.innerHTML = `<div class="text-center py-8 text-gray-500 text-sm">Cargando mensajes...</div>`;
+
+            try {
+                const { data, error } = await objetoDB
+                    .from('chat_mensajes')
+                    .select('*')
+                    .order('created_at', { ascending: true })
+                    .limit(100);
+
+                if (error) throw error;
+
+                if (data.length === 0) {
+                    container.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm italic">No hay mensajes aún. ¡Escribe el primero!</div>`;
+                    return;
+                }
+
+                container.innerHTML = data.map(msg => {
+                    const fecha = new Date(msg.created_at);
+                    const horaFormateada = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    const diaFormateada = fecha.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+                    
+                    const miNombre = document.getElementById("chat-usuario").value.trim();
+                    const esMio = miNombre && msg.usuario.toLowerCase() === miNombre.toLowerCase();
+                    const alignClass = esMio ? "ml-auto bg-blue-50 border-blue-100" : "mr-auto bg-white border-gray-100";
+                    const bubbleBg = esMio ? "bg-blue-50" : "bg-white";
+
+                    return `
+                        <div class="max-w-[85%] p-3 rounded-xl border shadow-sm ${alignClass} ${bubbleBg}">
+                            <div class="flex items-center justify-between gap-4 mb-1">
+                                <span class="font-bold text-xs text-blue-900">${msg.usuario}</span>
+                                <span class="text-[9px] text-gray-400 font-medium">${diaFormateada} - ${horaFormateada}</span>
+                            </div>
+                            <p class="text-sm text-gray-700 whitespace-pre-wrap">${msg.mensaje}</p>
+                        </div>
+                    `;
+                }).join('');
+
+                // Autoscroll para ir siempre abajo al último mensaje recibido
+                container.scrollTop = container.scrollHeight;
+                lucide.createIcons();
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = `<div class="text-center py-8 text-red-500 text-sm">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function enviarMensajeForo(e) {
+            e.preventDefault();
+            const inputUsuario = document.getElementById("chat-usuario");
+            const inputMensaje = document.getElementById("chat-mensaje-texto");
+
+            const usuario = inputUsuario.value.trim();
+            const mensaje = inputMensaje.value.trim();
+
+            if (usuario === "" || mensaje === "") return;
+
+            try {
+                const { error } = await objetoDB
+                    .from('chat_mensajes')
+                    .insert([{ usuario, mensaje }]);
+
+                if (error) throw error;
+
+                // Limpiamos solo la caja de texto para que no tenga que reescribir su nombre
+                inputMensaje.value = "";
+                await consultarForo();
+
+            } catch (err) {
+                console.error(err);
+                alert("No se pudo enviar el mensaje: " + err.message);
+            }
         }
     </script>
 </body>
