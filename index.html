@@ -79,11 +79,26 @@
                     <div id="secciones-container" class="space-y-4"></div>
                 </div>
 
+                <!-- SECCIÓN OBSERVACIONES FINALES (AHORA CON FOTOS MULTIPLES) -->
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 space-y-3">
                     <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 border-b pb-2">
                         <i data-lucide="message-square" class="text-blue-700"></i> Observaciones Finales
                     </h2>
-                    <textarea id="observaciones-finales" rows="3" placeholder="Notas complementarias para el relevo..." class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none"></textarea>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <textarea id="observaciones-finales" rows="3" placeholder="Notas complementarias para el relevo..." class="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm"></textarea>
+                        
+                        <div class="flex flex-col justify-center border border-dashed border-gray-200 rounded-lg p-2 bg-gray-50">
+                            <div class="flex items-center gap-2">
+                                <label class="cursor-pointer bg-white border text-xs font-semibold text-gray-700 px-3 py-1.5 rounded shadow-sm hover:bg-gray-50 flex items-center gap-1">
+                                    📸 Añadir Foto(s)
+                                    <input type="file" id="input-foto-observaciones" accept="image/*" multiple class="hidden" onchange="procesarFotoConCompresion(this, 'observaciones')">
+                                </label>
+                            </div>
+                            <div class="mt-2 hidden" id="preview-container-observaciones">
+                                <div id="preview-list-observaciones" class="flex flex-wrap gap-2"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit" id="btn-guardar" class="w-full bg-blue-900 text-white font-bold py-3 px-4 rounded-xl shadow hover:bg-blue-800 transition flex items-center justify-center gap-2">
@@ -151,7 +166,6 @@
 
         const objetoDB = window.supabase.createClient(URL_DE_SUPABASE, CLAVE_ANON_PUBLIC);
 
-        // LISTA DE PUESTOS (Incluye Packaging)
         const puestos = [
             { id: "linea_1", nombre: "Línea 1" }, { id: "linea_2", nombre: "Línea 2" },
             { id: "linea_3", nombre: "Línea 3" }, { id: "linea_4", nombre: "Línea 4" },
@@ -159,7 +173,8 @@
             { id: "carga_descarga", nombre: "Carga y descarga" }, { id: "carretillas", nombre: "Carretillas" }
         ];
 
-        let archivosFotos = {};
+        // Objeto para almacenar arrays de fotos por sección
+        let archivosFotos = {}; 
         let cacheRegistros = [];
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -214,16 +229,13 @@
                         
                         <div class="flex flex-col justify-center border border-dashed border-gray-200 rounded-lg p-2 bg-gray-50">
                             <div class="flex items-center gap-2">
-                                <label class="cursor-pointer bg-white border text-xs font-semibold text-gray-700 px-3 py-1.5 rounded shadow-sm hover:bg-gray-50">
-                                    📸 Hacer / Subir Foto
-                                    <input type="file" id="input-foto-${puesto.id}" accept="image/*" class="hidden" onchange="procesarFotoConCompresion(this, '${puesto.id}')">
+                                <label class="cursor-pointer bg-white border text-xs font-semibold text-gray-700 px-3 py-1.5 rounded shadow-sm hover:bg-gray-50 flex items-center gap-1">
+                                    📸 Añadir Foto(s)
+                                    <input type="file" id="input-foto-${puesto.id}" accept="image/*" multiple class="hidden" onchange="procesarFotoConCompresion(this, '${puesto.id}')">
                                 </label>
-                                <button type="button" id="btn-borrar-${puesto.id}" onclick="borrarFoto('${puesto.id}')" class="hidden text-red-500 hover:text-red-700">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
                             </div>
                             <div class="mt-2 hidden" id="preview-container-${puesto.id}">
-                                <img id="preview-${puesto.id}" src="" class="h-16 w-auto object-cover rounded border">
+                                <div id="preview-list-${puesto.id}" class="flex flex-wrap gap-2"></div>
                             </div>
                         </div>
                     </div>
@@ -231,55 +243,99 @@
             `).join('');
         }
 
+        // Procesador MULTI-FOTO con compresión
         function procesarFotoConCompresion(input, id) {
-            const file = input.files[0];
-            if (!file) return;
+            const files = Array.from(input.files);
+            if (!files.length) return;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    const MAX_DIM = 1200;
+            if (!archivosFotos[id]) archivosFotos[id] = [];
 
-                    if (width > height) {
-                        if (width > MAX_DIM) {
-                            height *= MAX_DIM / width;
-                            width = MAX_DIM;
+            let procesados = 0;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const MAX_DIM = 1200;
+
+                        if (width > height) {
+                            if (width > MAX_DIM) {
+                                height *= MAX_DIM / width;
+                                width = MAX_DIM;
+                            }
+                        } else {
+                            if (height > MAX_DIM) {
+                                width *= MAX_DIM / height;
+                                height = MAX_DIM;
+                            }
                         }
-                    } else {
-                        if (height > MAX_DIM) {
-                            width *= MAX_DIM / height;
-                            height = MAX_DIM;
-                        }
-                    }
 
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
 
-                    canvas.toBlob((blob) => {
-                        const compressedFile = new File([blob], `${id}.jpg`, { type: "image/jpeg" });
-                        archivosFotos[id] = compressedFile;
+                        canvas.toBlob((blob) => {
+                            const compressedFile = new File([blob], `${id}_${Date.now()}.jpg`, { type: "image/jpeg" });
+                            archivosFotos[id].push({
+                                file: compressedFile,
+                                dataUrl: canvas.toDataURL('image/jpeg', 0.7)
+                            });
 
-                        document.getElementById(`preview-${id}`).src = canvas.toDataURL('image/jpeg', 0.7);
-                        document.getElementById(`preview-container-${id}`).classList.remove('hidden');
-                        document.getElementById(`btn-borrar-${id}`).classList.remove('hidden');
-                    }, 'image/jpeg', 0.7);
+                            procesados++;
+                            if (procesados === files.length) {
+                                renderPreviews(id);
+                                input.value = ""; // Resetear input para permitir añadir más
+                            }
+                        }, 'image/jpeg', 0.7);
+                    };
+                    img.src = e.target.result;
                 };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
+                reader.readAsDataURL(file);
+            });
         }
 
-        function borrarFoto(id) {
-            document.getElementById(`input-foto-${id}`).value = "";
-            delete archivosFotos[id];
-            document.getElementById(`preview-container-${id}`).classList.add('hidden');
-            document.getElementById(`btn-borrar-${id}`).classList.add('hidden');
+        function renderPreviews(id) {
+            const container = document.getElementById(`preview-container-${id}`);
+            const listContainer = document.getElementById(`preview-list-${id}`);
+
+            if (!archivosFotos[id] || archivosFotos[id].length === 0) {
+                container.classList.add('hidden');
+                listContainer.innerHTML = '';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            listContainer.innerHTML = archivosFotos[id].map((item, index) => `
+                <div class="relative inline-block mt-1">
+                    <img src="${item.dataUrl}" class="h-16 w-16 object-cover rounded border border-gray-300">
+                    <button type="button" onclick="borrarFotoIndiv('${id}', ${index})" class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-0.5 shadow hover:bg-red-700 transition">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function borrarFotoIndiv(id, index) {
+            if (archivosFotos[id]) {
+                archivosFotos[id].splice(index, 1);
+                renderPreviews(id);
+            }
+        }
+
+        function limpiarTodasLasFotos() {
+            archivosFotos = {};
+            const todasLasSecciones = [...puestos.map(p => p.id), 'observaciones'];
+            todasLasSecciones.forEach(id => {
+                const container = document.getElementById(`preview-container-${id}`);
+                const listContainer = document.getElementById(`preview-list-${id}`);
+                if (container) container.classList.add('hidden');
+                if (listContainer) listContainer.innerHTML = '';
+            });
         }
 
         function establecerFechaYTurnoAutomatico() {
@@ -320,25 +376,30 @@
                 if (checkError) throw checkError;
 
                 let urlsFotos = {};
+                const seccionesParaSubir = [...puestos.map(p => p.id), 'observaciones'];
 
-                const marcaDeTiempo = Date.now();
-                for (const puesto of puestos) {
-                    if (archivosFotos[puesto.id]) {
-                        const file = archivosFotos[puesto.id];
+                // Subida de múltiples fotos por sección
+                for (const secId of seccionesParaSubir) {
+                    if (archivosFotos[secId] && archivosFotos[secId].length > 0) {
+                        urlsFotos[secId] = [];
                         const turnoLimpio = turno.replace(/Ñ/g, "N").replace(/ñ/g, "n");
-                        const fileName = `${fecha}_${turnoLimpio}_${puesto.id}_${marcaDeTiempo}.jpg`;
 
-                        const { data, error } = await objetoDB.storage
-                            .from('fotos-relevos')
-                            .upload(fileName, file, { cacheControl: '3600', upsert: true });
+                        for (let idx = 0; idx < archivosFotos[secId].length; idx++) {
+                            const fileObj = archivosFotos[secId][idx].file;
+                            const fileName = `${fecha}_${turnoLimpio}_${secId}_${Date.now()}_${idx}.jpg`;
 
-                        if (error) throw error;
+                            const { error: uploadErr } = await objetoDB.storage
+                                .from('fotos-relevos')
+                                .upload(fileName, fileObj, { cacheControl: '3600', upsert: true });
 
-                        const { data: publicUrlData } = objetoDB.storage
-                            .from('fotos-relevos')
-                            .getPublicUrl(fileName);
+                            if (uploadErr) throw uploadErr;
 
-                        urlsFotos[puesto.id] = publicUrlData.publicUrl;
+                            const { data: publicUrlData } = objetoDB.storage
+                                .from('fotos-relevos')
+                                .getPublicUrl(fileName);
+
+                            urlsFotos[secId].push(publicUrlData.publicUrl);
+                        }
                     }
                 }
 
@@ -351,6 +412,7 @@
                     }
                 }
 
+                // Lógica de Observaciones (Texto + Fotos)
                 let obsFinal = existente ? existente.observaciones : "";
                 if (observaciones !== "") {
                     const obsConHora = `[${horaGrabacion}h] ${observaciones}`;
@@ -361,11 +423,22 @@
                     }
                 }
 
+                let obsFotoFinal = existente ? existente.observaciones_foto : null;
+                if (urlsFotos['observaciones'] && urlsFotos['observaciones'].length > 0) {
+                    const nuevasUrlsObs = urlsFotos['observaciones'].join(',');
+                    if (existente && existente.observaciones_foto && existente.observaciones_foto !== "") {
+                        obsFotoFinal = existente.observaciones_foto + "," + nuevasUrlsObs;
+                    } else {
+                        obsFotoFinal = nuevasUrlsObs;
+                    }
+                }
+
                 const datosAEnviar = {
                     fecha: fecha,
                     turno: turno,
                     jefe: jefeFinal,
-                    observaciones: obsFinal
+                    observaciones: obsFinal,
+                    observaciones_foto: obsFotoFinal
                 };
 
                 puestos.forEach(puesto => {
@@ -383,11 +456,12 @@
                             datosAEnviar[puesto.id] = existente[puesto.id];
                         }
 
-                        if (urlsFotos[puesto.id]) {
+                        if (urlsFotos[puesto.id] && urlsFotos[puesto.id].length > 0) {
+                            const nuevasUrls = urlsFotos[puesto.id].join(',');
                             if (existente[`${puesto.id}_foto`] && existente[`${puesto.id}_foto`] !== "") {
-                                datosAEnviar[`${puesto.id}_foto`] = existente[`${puesto.id}_foto`] + "," + urlsFotos[puesto.id];
+                                datosAEnviar[`${puesto.id}_foto`] = existente[`${puesto.id}_foto`] + "," + nuevasUrls;
                             } else {
-                                datosAEnviar[`${puesto.id}_foto`] = urlsFotos[puesto.id];
+                                datosAEnviar[`${puesto.id}_foto`] = nuevasUrls;
                             }
                         } else {
                             datosAEnviar[`${puesto.id}_foto`] = existente[`${puesto.id}_foto`];
@@ -395,7 +469,7 @@
 
                     } else {
                         datosAEnviar[puesto.id] = textInput !== "" ? `[${horaGrabacion}h] ${textInput}` : "Sin incidencias";
-                        datosAEnviar[`${puesto.id}_foto`] = urlsFotos[puesto.id] || null;
+                        datosAEnviar[`${puesto.id}_foto`] = urlsFotos[puesto.id] ? urlsFotos[puesto.id].join(',') : null;
                     }
                 });
 
@@ -417,7 +491,7 @@
                 }
 
                 document.getElementById("relevo-form").reset();
-                puestos.forEach(p => borrarFoto(p.id));
+                limpiarTodasLasFotos();
                 establecerFechaYTurnoAutomatico();
                 cambiarPestana('historial');
 
@@ -513,6 +587,19 @@
                         </div>`;
                 }).join('');
 
+                // Renderizado de fotos de Observaciones
+                let htmlObsFoto = '';
+                if (reg.observaciones_foto && reg.observaciones_foto !== "") {
+                    const arrayObsFotos = reg.observaciones_foto.split(',');
+                    htmlObsFoto = '<div class="mt-2 flex flex-wrap gap-2">';
+                    arrayObsFotos.forEach(url => {
+                        if (url.trim() !== "") {
+                            htmlObsFoto += `<img src="${url.trim()}" alt="Evidencia Observaciones" class="h-28 w-auto object-cover rounded border border-gray-300 shadow-sm cursor-zoom-in hover:opacity-80 transition" onclick="window.open('${url.trim()}', '_blank')">`;
+                        }
+                    });
+                    htmlObsFoto += '</div>';
+                }
+
                 contenedor.innerHTML += `
                     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                         <div class="flex justify-between items-center border-b pb-3 mb-3">
@@ -523,7 +610,12 @@
                             <span class="text-sm font-semibold text-gray-600">👤 ${reg.jefe}</span>
                         </div>
                         <div class="pl-1">${htmlPuestos}</div>
-                        ${reg.observaciones ? `<div class="mt-3 p-3 bg-gray-50 text-sm rounded-lg text-gray-700 border border-gray-100 whitespace-pre-wrap"><b>Observaciones:</b><br>${reg.observaciones}</div>` : ''}
+                        ${(reg.observaciones || htmlObsFoto) ? `
+                            <div class="mt-3 p-3 bg-gray-50 text-sm rounded-lg text-gray-700 border border-gray-100 whitespace-pre-wrap">
+                                <b>Observaciones:</b><br>${reg.observaciones || ''}
+                                ${htmlObsFoto}
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
