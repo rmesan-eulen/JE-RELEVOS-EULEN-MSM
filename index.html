@@ -153,11 +153,11 @@
 
         const objetoDB = window.supabase.createClient(URL_DE_SUPABASE, CLAVE_ANON_PUBLIC);
 
-        const puestos = [
+       const puestos = [
             { id: "linea_1", nombre: "Línea 1" }, { id: "linea_2", nombre: "Línea 2" },
             { id: "linea_3", nombre: "Línea 3" }, { id: "linea_4", nombre: "Línea 4" },
-            { id: "linea_5", nombre: "Línea 5" }, { id: "carga_descarga", nombre: "Carga y descarga" },
-            { id: "carretillas", nombre: "Carretillas" }
+            { id: "linea_5", nombre: "Línea 5" }, { id: "packaging", nombre: "Packaging" },
+            { id: "carga_descarga", nombre: "Carga y descarga" }, { id: "carretillas", nombre: "Carretillas" }
         ];
 
         let archivosFotos = {};
@@ -477,16 +477,16 @@
                 const [ano, mes, dia] = reg.fecha.split('-');
                 const fechaEspanol = `${dia}/${mes}/${ano}`;
 
-                const mapeoPuestosVisual = [
+               const mapeoPuestosVisual = [
                     { nombre: "Línea 1", novedades: reg.linea_1, foto: reg.linea_1_foto },
                     { nombre: "Línea 2", novedades: reg.linea_2, foto: reg.linea_2_foto },
                     { nombre: "Línea 3", novedades: reg.linea_3, foto: reg.linea_3_foto },
                     { nombre: "Línea 4", novedades: reg.linea_4, foto: reg.linea_4_foto },
                     { nombre: "Línea 5", novedades: reg.linea_5, foto: reg.linea_5_foto },
+                    { nombre: "Packaging", novedades: reg.packaging, foto: reg.packaging_foto },
                     { nombre: "Carga y descarga", novedades: reg.carga_descarga, foto: reg.carga_descarga_foto },
                     { nombre: "Carretillas", novedades: reg.carretillas, foto: reg.carretillas_foto }
                 ];
-
                 let htmlPuestos = mapeoPuestosVisual.map(p => {
                     const esIncidencia = p.novedades !== "Sin incidencias" && p.novedades && p.novedades.trim() !== "";
                     const colorPunto = esIncidencia ? "bg-red-500" : "bg-green-500";
