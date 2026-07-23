@@ -29,7 +29,7 @@
             </div>
         </div>
         
-        <!-- MENÚ DE TRES PESTAÑAS (Adaptado a móviles) -->
+        <!-- MENÚ DE PESTAÑAS -->
         <div class="max-w-4xl mx-auto px-4 mt-2 flex gap-1 border-b border-blue-700 overflow-x-auto whitespace-nowrap">
             <button onclick="cambiarPestana('nuevo')" id="tab-nuevo" class="px-3 py-2 text-sm font-semibold bg-white text-blue-900 rounded-t-lg transition">
                 📝 Nuevo Parte
@@ -110,7 +110,7 @@
             <div id="lista-historial" class="space-y-4"></div>
         </div>
 
-        <!-- VISTA 3: FORO / CHAT (NUEVA) -->
+        <!-- VISTA 3: FORO / CHAT -->
         <div id="vista-foro" class="hidden space-y-4">
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
                 <div>
@@ -125,10 +125,8 @@
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[480px]">
-                <!-- Contenedor mensajes chat -->
                 <div id="chat-mensajes-container" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 rounded-t-xl"></div>
 
-                <!-- Formulario de envío -->
                 <form id="chat-form" class="p-3 border-t border-gray-100 bg-white rounded-b-xl flex gap-2 items-end">
                     <div class="flex-1 space-y-2">
                         <div class="flex gap-2">
@@ -153,7 +151,8 @@
 
         const objetoDB = window.supabase.createClient(URL_DE_SUPABASE, CLAVE_ANON_PUBLIC);
 
-       const puestos = [
+        // LISTA DE PUESTOS (Incluye Packaging)
+        const puestos = [
             { id: "linea_1", nombre: "Línea 1" }, { id: "linea_2", nombre: "Línea 2" },
             { id: "linea_3", nombre: "Línea 3" }, { id: "linea_4", nombre: "Línea 4" },
             { id: "linea_5", nombre: "Línea 5" }, { id: "packaging", nombre: "Packaging" },
@@ -168,7 +167,6 @@
             establecerFechaYTurnoAutomatico();
             lucide.createIcons();
 
-            // Escuchar el envío del formulario de chat
             document.getElementById("chat-form").addEventListener("submit", enviarMensajeForo);
         });
 
@@ -199,7 +197,6 @@
                 vistaForo.classList.remove('hidden');
                 tabForo.className = "px-3 py-2 text-sm font-semibold bg-white text-blue-900 rounded-t-lg transition";
                 
-                // Relleno automático del usuario si ya lo escribió en el parte
                 const nombreJefe = document.getElementById("nombre-jefe").value.trim();
                 if (nombreJefe !== "") {
                     document.getElementById("chat-usuario").value = nombreJefe;
@@ -477,7 +474,7 @@
                 const [ano, mes, dia] = reg.fecha.split('-');
                 const fechaEspanol = `${dia}/${mes}/${ano}`;
 
-               const mapeoPuestosVisual = [
+                const mapeoPuestosVisual = [
                     { nombre: "Línea 1", novedades: reg.linea_1, foto: reg.linea_1_foto },
                     { nombre: "Línea 2", novedades: reg.linea_2, foto: reg.linea_2_foto },
                     { nombre: "Línea 3", novedades: reg.linea_3, foto: reg.linea_3_foto },
@@ -487,6 +484,7 @@
                     { nombre: "Carga y descarga", novedades: reg.carga_descarga, foto: reg.carga_descarga_foto },
                     { nombre: "Carretillas", novedades: reg.carretillas, foto: reg.carretillas_foto }
                 ];
+
                 let htmlPuestos = mapeoPuestosVisual.map(p => {
                     const esIncidencia = p.novedades !== "Sin incidencias" && p.novedades && p.novedades.trim() !== "";
                     const colorPunto = esIncidencia ? "bg-red-500" : "bg-green-500";
@@ -531,7 +529,6 @@
             });
         }
 
-        // --- SISTEMA DEL FORO / CHAT ---
         async function consultarForo() {
             const container = document.getElementById("chat-mensajes-container");
             container.innerHTML = `<div class="text-center py-8 text-gray-500 text-sm">Cargando mensajes...</div>`;
@@ -571,7 +568,6 @@
                     `;
                 }).join('');
 
-                // Autoscroll para ir siempre abajo al último mensaje recibido
                 container.scrollTop = container.scrollHeight;
                 lucide.createIcons();
 
@@ -598,7 +594,6 @@
 
                 if (error) throw error;
 
-                // Limpiamos solo la caja de texto para que no tenga que reescribir su nombre
                 inputMensaje.value = "";
                 await consultarForo();
 
